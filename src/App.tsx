@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Layout } from './components/Layout'
 import { RepoInput } from './components/RepoInput'
 import { StatsProgressPanel } from './components/StatsProgressPanel'
@@ -6,6 +6,7 @@ import { ChartCard } from './components/charts/ChartCard'
 import { ActivityHeatmap } from './components/charts/ActivityHeatmap'
 import { PunchCard } from './components/charts/PunchCard'
 import { ContributorStreamgraph } from './components/charts/ContributorStreamgraph'
+import { EraTimeline } from './components/charts/EraTimeline'
 import { CommitAnalysisCard } from './components/charts/CommitAnalysisCard'
 import { FileChurnCard } from './components/charts/FileChurnCard'
 import { MessageCultureCard } from './components/charts/MessageCultureCard'
@@ -14,10 +15,12 @@ import { checkRateLimit } from './lib/github/checkRateLimit'
 import { useRepoStats } from './lib/github/useRepoStats'
 import { useCommitAnalysis } from './lib/github/useCommitAnalysis'
 import { useFileChurn } from './lib/github/useFileChurn'
+import { detectEras } from './lib/era/detectEras'
 
 function App() {
   const [repo, setRepo] = useState<RepoRef | null>(null)
   const { progress, result, error, run } = useRepoStats()
+  const eras = useMemo(() => (result ? detectEras(result.contributors) : []), [result])
   const commitAnalysis = useCommitAnalysis()
   const fileChurn = useFileChurn()
   const abortRef = useRef<AbortController | null>(null)
@@ -85,6 +88,9 @@ function App() {
 
           {result && (
             <div className="mt-4 grid gap-6">
+              <ChartCard title="Eras" description="Automatically segmented from the full commit history">
+                <EraTimeline eras={eras} />
+              </ChartCard>
               <ChartCard title="Activity" description="Commits per day, last 52 weeks">
                 <ActivityHeatmap weeks={result.commitActivity} />
               </ChartCard>
