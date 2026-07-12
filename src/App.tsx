@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Layout } from './components/Layout'
 import { RepoInput } from './components/RepoInput'
 import { StatsProgressPanel } from './components/StatsProgressPanel'
+import { ChartCard } from './components/charts/ChartCard'
+import { ActivityHeatmap } from './components/charts/ActivityHeatmap'
+import { PunchCard } from './components/charts/PunchCard'
 import type { RepoRef } from './lib/github/parseRepoUrl'
 import { checkRateLimit } from './lib/github/checkRateLimit'
 import { useRepoStats } from './lib/github/useRepoStats'
@@ -40,19 +43,31 @@ function App() {
       </div>
 
       {repo && (
-        <div className="mt-16 rounded-xl border border-white/10 bg-white/3 p-6 text-left">
+        <div className="mt-16 text-left">
           <p className="font-mono text-sm text-slate-400">
             {repo.owner}/{repo.repo}
           </p>
-          <div className="mt-4">
-            <StatsProgressPanel progress={progress} />
-          </div>
+
+          {!result && (
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/3 p-6">
+              <StatsProgressPanel progress={progress} />
+            </div>
+          )}
+
           {error && <p className="mt-4 text-sm text-rose-400">{error.message}</p>}
+
           {result && (
-            <p className="mt-4 text-sm text-emerald-400">
-              Resolved — {result.commitActivity.length} weeks of commit activity,{' '}
-              {result.contributors.length} contributors tracked.
-            </p>
+            <div className="mt-4 grid gap-6">
+              <ChartCard title="Activity" description="Commits per day, last 52 weeks">
+                <ActivityHeatmap weeks={result.commitActivity} />
+              </ChartCard>
+              <ChartCard
+                title="Punch card"
+                description="When commits land, by hour and weekday (UTC)"
+              >
+                <PunchCard points={result.punchCard} />
+              </ChartCard>
+            </div>
           )}
         </div>
       )}
