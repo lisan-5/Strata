@@ -7,17 +7,21 @@ import { ActivityHeatmap } from './components/charts/ActivityHeatmap'
 import { PunchCard } from './components/charts/PunchCard'
 import { ContributorStreamgraph } from './components/charts/ContributorStreamgraph'
 import { CommitAnalysisCard } from './components/charts/CommitAnalysisCard'
+import { FileChurnCard } from './components/charts/FileChurnCard'
 import type { RepoRef } from './lib/github/parseRepoUrl'
 import { checkRateLimit } from './lib/github/checkRateLimit'
 import { useRepoStats } from './lib/github/useRepoStats'
 import { useCommitAnalysis } from './lib/github/useCommitAnalysis'
+import { useFileChurn } from './lib/github/useFileChurn'
 
 function App() {
   const [repo, setRepo] = useState<RepoRef | null>(null)
   const { progress, result, error, run } = useRepoStats()
   const commitAnalysis = useCommitAnalysis()
+  const fileChurn = useFileChurn()
   const abortRef = useRef<AbortController | null>(null)
   const commitAbortRef = useRef<AbortController | null>(null)
+  const fileChurnAbortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     checkRateLimit().catch(() => {
@@ -40,6 +44,14 @@ function App() {
     const controller = new AbortController()
     commitAbortRef.current = controller
     void commitAnalysis.run(repo, controller.signal)
+  }
+
+  function handleAnalyzeFileChurn(sampleSize: number) {
+    if (!repo || !commitAnalysis.commits) return
+    fileChurnAbortRef.current?.abort()
+    const controller = new AbortController()
+    fileChurnAbortRef.current = controller
+    void fileChurn.run(repo, commitAnalysis.commits, sampleSize, controller.signal)
   }
 
   return (
@@ -92,6 +104,13 @@ function App() {
                 state={commitAnalysis}
                 onRun={handleAnalyzeCommits}
               />
+              {commitAnalysis.commits && (
+                <FileChurnCard
+                  availableCommits={commitAnalysis.commits.length}
+                  state={fileChurn}
+                  onRun={handleAnalyzeFileChurn}
+                />
+              )}
             </div>
           )}
         </div>
