@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
 import { fetchCommits, type CommitSummary } from './commits'
 import type { RepoRef } from './parseRepoUrl'
-import type { BasicCommitStats } from '../../workers/commitAnalysis.types'
-import { computeBasicStats } from '../../workers/commitAnalysisClient'
+import type { BasicCommitStats, MessageCultureResult } from '../../workers/commitAnalysis.types'
+import { computeBasicStats, computeMessageCulture } from '../../workers/commitAnalysisClient'
 
 export type CommitAnalysisStatus = 'idle' | 'fetching' | 'analyzing' | 'done' | 'error'
 
@@ -13,6 +13,7 @@ export interface CommitAnalysisState {
   truncated: boolean
   commits: CommitSummary[] | null
   basicStats: BasicCommitStats | null
+  cultureStats: MessageCultureResult | null
   error: Error | null
 }
 
@@ -23,13 +24,16 @@ const initialState: CommitAnalysisState = {
   truncated: false,
   commits: null,
   basicStats: null,
+  cultureStats: null,
   error: null,
 }
 
 /**
  * Fetches raw commits (paginated, rate-limit-costly) and hands them to a
  * Web Worker for aggregation — this is the "loop over commits" path, and it
- * never runs on the main thread, no exceptions.
+ * never runs on the main thread, no exceptions. Message-culture analysis
+ * reuses these same commits (already paid for), so it runs alongside the
+ * basic author/date stats rather than behind its own opt-in.
  */
 export function useCommitAnalysis() {
   const [state, setState] = useState<CommitAnalysisState>(initialState)
@@ -46,9 +50,12 @@ export function useCommitAnalysis() {
 
       setState((prev) => ({ ...prev, status: 'analyzing', commits, truncated }))
 
-      const basicStats = await computeBasicStats(commits)
+      const [basicStats, cultureStats] = await Promise.all([
+        computeBasicStats(commits),
+        computeMessageCulture(commits),
+      ])
 
-      setState((prev) => ({ ...prev, status: 'done', basicStats }))
+      setState((prev) => ({ ...prev, status: 'done', basicStats, cultureStats }))
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         setState(initialState)

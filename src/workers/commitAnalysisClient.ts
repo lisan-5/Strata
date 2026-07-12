@@ -2,6 +2,7 @@ import type {
   BasicCommitStats,
   FileChurnRecord,
   FileCommit,
+  MessageCultureResult,
   WorkerRequest,
   WorkerResponse,
 } from './commitAnalysis.types'
@@ -49,4 +50,9 @@ export async function computeFileChurn(
 ): Promise<FileChurnRecord[]> {
   const response = await sendRequest({ type: 'file-churn', commits, fileCommits })
   return (response as { type: 'file-churn'; result: FileChurnRecord[] }).result
+}
+
+export async function computeMessageCulture(commits: CommitSummary[]): Promise<MessageCultureResult> {
+  const response = await sendRequest({ type: 'message-culture', commits })
+  return (response as { type: 'message-culture'; result: MessageCultureResult }).result
 }

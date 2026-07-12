@@ -8,6 +8,7 @@ import { PunchCard } from './components/charts/PunchCard'
 import { ContributorStreamgraph } from './components/charts/ContributorStreamgraph'
 import { CommitAnalysisCard } from './components/charts/CommitAnalysisCard'
 import { FileChurnCard } from './components/charts/FileChurnCard'
+import { MessageCultureCard } from './components/charts/MessageCultureCard'
 import type { RepoRef } from './lib/github/parseRepoUrl'
 import { checkRateLimit } from './lib/github/checkRateLimit'
 import { useRepoStats } from './lib/github/useRepoStats'
@@ -110,6 +111,9 @@ function App() {
                   state={fileChurn}
                   onRun={handleAnalyzeFileChurn}
                 />
+              )}
+              {commitAnalysis.cultureStats && (
+                <MessageCultureCard stats={commitAnalysis.cultureStats} />
               )}
             </div>
           )}
