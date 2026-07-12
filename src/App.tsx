@@ -6,14 +6,18 @@ import { ChartCard } from './components/charts/ChartCard'
 import { ActivityHeatmap } from './components/charts/ActivityHeatmap'
 import { PunchCard } from './components/charts/PunchCard'
 import { ContributorStreamgraph } from './components/charts/ContributorStreamgraph'
+import { CommitAnalysisCard } from './components/charts/CommitAnalysisCard'
 import type { RepoRef } from './lib/github/parseRepoUrl'
 import { checkRateLimit } from './lib/github/checkRateLimit'
 import { useRepoStats } from './lib/github/useRepoStats'
+import { useCommitAnalysis } from './lib/github/useCommitAnalysis'
 
 function App() {
   const [repo, setRepo] = useState<RepoRef | null>(null)
   const { progress, result, error, run } = useRepoStats()
+  const commitAnalysis = useCommitAnalysis()
   const abortRef = useRef<AbortController | null>(null)
+  const commitAbortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     checkRateLimit().catch(() => {
@@ -23,10 +27,19 @@ function App() {
 
   function handleSubmit(next: RepoRef) {
     abortRef.current?.abort()
+    commitAbortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
     setRepo(next)
     void run(next, controller.signal)
+  }
+
+  function handleAnalyzeCommits() {
+    if (!repo) return
+    commitAbortRef.current?.abort()
+    const controller = new AbortController()
+    commitAbortRef.current = controller
+    void commitAnalysis.run(repo, controller.signal)
   }
 
   return (
@@ -74,6 +87,11 @@ function App() {
               >
                 <ContributorStreamgraph contributors={result.contributors} />
               </ChartCard>
+              <CommitAnalysisCard
+                repo={repo}
+                state={commitAnalysis}
+                onRun={handleAnalyzeCommits}
+              />
             </div>
           )}
         </div>
