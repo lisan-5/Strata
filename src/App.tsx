@@ -1,17 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Layout } from './components/Layout'
 import { RepoInput } from './components/RepoInput'
+import { StatsProgressPanel } from './components/StatsProgressPanel'
 import type { RepoRef } from './lib/github/parseRepoUrl'
 import { checkRateLimit } from './lib/github/checkRateLimit'
+import { useRepoStats } from './lib/github/useRepoStats'
 
 function App() {
   const [repo, setRepo] = useState<RepoRef | null>(null)
+  const { progress, result, error, run } = useRepoStats()
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     checkRateLimit().catch(() => {
       // Best-effort: leave the budget meter at its optimistic default if this fails.
     })
   }, [])
+
+  function handleSubmit(next: RepoRef) {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    setRepo(next)
+    void run(next, controller.signal)
+  }
 
   return (
     <Layout>
@@ -24,7 +36,7 @@ function App() {
           eras, maps contributor churn, and finds the bus-factor risks — all
           in your browser, no backend.
         </p>
-        <RepoInput onSubmit={setRepo} />
+        <RepoInput onSubmit={handleSubmit} />
       </div>
 
       {repo && (
@@ -32,9 +44,16 @@ function App() {
           <p className="font-mono text-sm text-slate-400">
             {repo.owner}/{repo.repo}
           </p>
-          <p className="mt-2 text-sm text-slate-500">
-            Analysis pipeline not wired up yet — this is the landing shell.
-          </p>
+          <div className="mt-4">
+            <StatsProgressPanel progress={progress} />
+          </div>
+          {error && <p className="mt-4 text-sm text-rose-400">{error.message}</p>}
+          {result && (
+            <p className="mt-4 text-sm text-emerald-400">
+              Resolved — {result.commitActivity.length} weeks of commit activity,{' '}
+              {result.contributors.length} contributors tracked.
+            </p>
+          )}
         </div>
       )}
     </Layout>
