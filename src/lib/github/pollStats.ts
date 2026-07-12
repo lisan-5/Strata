@@ -60,7 +60,12 @@ export async function pollStats<T>(path: string, options: PollOptions = {}): Pro
       throw new GithubApiError(`GitHub stats request failed: ${response.status}`, response.status)
     }
 
-    return response.json() as Promise<T>
+    const body = await response.json()
+    // GitHub sometimes answers 200 with a bare `{}` instead of the documented
+    // array for repos too new/small for stats to have been computed yet — an
+    // undocumented cousin of the 202 dance. All four stats endpoints this app
+    // calls are array-shaped, so normalize anything else to empty.
+    return (Array.isArray(body) ? body : []) as T
   }
 
   throw new GithubApiError(

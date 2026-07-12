@@ -5,6 +5,7 @@ import { StatsProgressPanel } from './components/StatsProgressPanel'
 import { ChartCard } from './components/charts/ChartCard'
 import { ActivityHeatmap } from './components/charts/ActivityHeatmap'
 import { PunchCard } from './components/charts/PunchCard'
+import { ContributorStreamgraph } from './components/charts/ContributorStreamgraph'
 import type { RepoRef } from './lib/github/parseRepoUrl'
 import { checkRateLimit } from './lib/github/checkRateLimit'
 import { useRepoStats } from './lib/github/useRepoStats'
@@ -66,6 +67,12 @@ function App() {
                 description="When commits land, by hour and weekday (UTC)"
               >
                 <PunchCard points={result.punchCard} />
+              </ChartCard>
+              <ChartCard
+                title="Contributors over time"
+                description="Weekly commits per contributor, full history"
+              >
+                <ContributorStreamgraph contributors={result.contributors} />
               </ChartCard>
             </div>
           )}
