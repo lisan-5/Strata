@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { BudgetMeter } from './BudgetMeter'
+import { TokenInput } from './TokenInput'
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
@@ -8,12 +10,16 @@ export function Layout({ children }: { children: ReactNode }) {
           <span className="font-mono text-sm font-semibold tracking-tight text-slate-100">
             strata
           </span>
-          <a
-            href="https://github.com/lisan-5/Strata"
-            className="text-sm text-slate-400 transition hover:text-slate-200"
-          >
-            source
-          </a>
+          <div className="flex items-center gap-4">
+            <BudgetMeter />
+            <TokenInput />
+            <a
+              href="https://github.com/lisan-5/Strata"
+              className="text-sm text-slate-400 transition hover:text-slate-200"
+            >
+              source
+            </a>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-6 py-12">{children}</main>

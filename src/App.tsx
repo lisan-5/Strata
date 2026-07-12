@@ -1,10 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Layout } from './components/Layout'
 import { RepoInput } from './components/RepoInput'
 import type { RepoRef } from './lib/github/parseRepoUrl'
+import { checkRateLimit } from './lib/github/checkRateLimit'
 
 function App() {
   const [repo, setRepo] = useState<RepoRef | null>(null)
+
+  useEffect(() => {
+    checkRateLimit().catch(() => {
+      // Best-effort: leave the budget meter at its optimistic default if this fails.
+    })
+  }, [])
 
   return (
     <Layout>
@@ -21,7 +28,7 @@ function App() {
       </div>
 
       {repo && (
-        <div className="mt-16 rounded-xl border border-white/10 bg-white/[0.03] p-6 text-left">
+        <div className="mt-16 rounded-xl border border-white/10 bg-white/3 p-6 text-left">
           <p className="font-mono text-sm text-slate-400">
             {repo.owner}/{repo.repo}
           </p>
